@@ -1,0 +1,56 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+// NRF24L01 Pin configuration
+#define CE_PIN 7
+#define CSN_PIN 8
+
+// Relay control pin
+const int relayPin = 2;
+
+// NRF24L01 setup
+RF24 radio(CE_PIN, CSN_PIN);
+const byte address[6] = "00001"; // Communication address
+
+void setup() {
+    Serial.begin(9600);
+    
+    // Initialize the relay pin
+    pinMode(relayPin, OUTPUT);
+    digitalWrite(relayPin, LOW); // Ensure relay starts OFF
+    
+    // Initialize NRF24L01
+    radio.begin();
+    radio.openReadingPipe(0, address);
+    radio.setPALevel(RF24_PA_LOW); // Set power level
+    radio.startListening(); // Configure as receiver
+    
+    Serial.println("Receiver started...");
+}
+
+void loop() {
+    // Check if data is available
+    if (radio.available()) {
+        int receivedData = 0;
+        
+        // Read the received data
+        radio.read(&receivedData, sizeof(receivedData));
+        
+        // Debug info
+        Serial.print("Data Received: ");
+        Serial.println(receivedData);
+        
+        // Control the relay based on received data
+        if (receivedData == 1) {
+            digitalWrite(relayPin, HIGH); // Turn ON relay
+            Serial.println("Relay ON");
+        } else {
+            digitalWrite(relayPin, LOW); // Turn OFF relay
+            Serial.println("Relay OFF");
+        }
+    }
+    
+    // Small delay for stability
+    delay(200);
+}

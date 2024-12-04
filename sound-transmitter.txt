@@ -1,0 +1,54 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+// NRF24L01 Pin configuration
+#define CE_PIN 7
+#define CSN_PIN 8
+
+// Sound sensor pin
+const int soundSensorPin = A0;
+
+// NRF24L01 setup
+RF24 radio(CE_PIN, CSN_PIN);
+const byte address[6] = "00001"; // Communication address
+
+void setup() {
+    Serial.begin(9600);
+    
+    // Initialize the sound sensor pin
+    pinMode(soundSensorPin, INPUT);
+    
+    // Initialize NRF24L01
+    radio.begin();
+    radio.openWritingPipe(address);
+    radio.setPALevel(RF24_PA_LOW); // Set power level
+    radio.stopListening(); // Configure as transmitter
+    
+    Serial.println("Transmitter started...");
+}
+
+void loop() {
+    // Read sound level
+    int soundLevel = analogRead(soundSensorPin);
+    
+    // Determine the data to send
+    int dataToSend = (soundLevel > 400) ? 1 : 0;
+    
+    // Debug info
+    Serial.print("Sound Level: ");
+    Serial.print(soundLevel);
+    Serial.print(" | Data Sent: ");
+    Serial.println(dataToSend);
+    
+    // Transmit data
+    bool success = radio.write(&dataToSend, sizeof(dataToSend));
+    if (success) {
+        Serial.println("Data sent successfully!");
+    } else {
+        Serial.println("Data send failed!");
+    }
+    
+    // Delay for stability
+    delay(200);
+}
